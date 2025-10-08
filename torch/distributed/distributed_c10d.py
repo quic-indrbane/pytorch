@@ -378,15 +378,15 @@ class BackendConfig:
             # available, it returns CPU.
             device_type = torch._C._get_accelerator().type
             try:
-                backend_str = Backend.default_device_backend_map[device_type]
-                self.device_backend_map[device_type] = Backend(backend_str)
+                backend = Backend.default_device_backend_map[device_type]
             except KeyError:
                 raise ValueError(
                     f"We detected accelerator {device_type} on your machine. "
                     f"But we don't know which communication backend to use for this accelerator. "
                     f"Please specify the `backend` argument in the `init_process_group` call."
                 ) from None
-        elif backend.lower() in Backend.backend_list:
+
+        if backend.lower() in Backend.backend_list:
             # Cases for when backend is a single string (without device types)
             # e.g. "nccl", "gloo", "ucc", "mpi"
             supported_devices = Backend.backend_capability[backend.lower()]
@@ -1384,7 +1384,10 @@ def get_default_backend_for_device(device: Union[str, torch.device]) -> str:
         device (Union[str, torch.device]): The device to get the default backend for.
 
     Returns:
-        The default backend for the given device as a lower case string.
+        The default backend for the given device. Note that the default backend may be
+        of the format "<device_type>:<backend_name>,<device_type>:<backend_name>"
+        supported by :func:`init_process_group`'s `backend` argument.
+
 
     """
     if isinstance(device, torch.device):
